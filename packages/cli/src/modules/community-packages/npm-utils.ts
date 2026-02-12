@@ -58,8 +58,11 @@ export async function executeNpmCommand(
 	const { cwd, doNotHandleError } = options;
 
 	try {
-		const { stdout } = await asyncExecFile('npm', args, cwd ? { cwd } : undefined);
-		return typeof stdout === 'string' ? stdout : stdout.toString();
+		const { stdout } = await asyncExecFile('npm', args, {
+			cwd,
+			shell: process.platform === 'win32',
+		});
+		return stdout;
 	} catch (error) {
 		if (doNotHandleError) {
 			throw error;
