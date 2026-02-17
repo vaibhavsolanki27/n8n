@@ -56,9 +56,10 @@ export async function executeNpmCommand(
 	options: NpmCommandOptions = {},
 ): Promise<string> {
 	const { cwd, doNotHandleError } = options;
+	const npmExecutable = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 
 	try {
-		const { stdout } = await asyncExecFile('npm', args, {
+		const { stdout } = await asyncExecFile(npmExecutable, args, {
 			cwd,
 			shell: process.platform === 'win32',
 		});
