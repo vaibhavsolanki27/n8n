@@ -803,10 +803,14 @@ describe('CommunityPackagesService', () => {
 
 			await communityPackagesService.checkForMissingPackages();
 
-			expect(getCommunityNodeTypes).toHaveBeenCalledWith('production', {
-				filters: { packageName: { $in: ['package-1'] } },
-				fields: ['packageName', 'npmVersion', 'checksum', 'nodeVersions'],
-			});
+			expect(getCommunityNodeTypes).toHaveBeenCalledWith(
+				'production',
+				{
+					filters: { packageName: { $in: ['package-1'] } },
+					fields: ['packageName', 'npmVersion', 'checksum', 'nodeVersions'],
+				},
+				config.aiNodeSdkVersion,
+			);
 		});
 
 		test('should use staging environment when ENVIRONMENT is set to staging', async () => {
@@ -824,10 +828,14 @@ describe('CommunityPackagesService', () => {
 			try {
 				await communityPackagesService.checkForMissingPackages();
 
-				expect(getCommunityNodeTypes).toHaveBeenCalledWith('staging', {
-					filters: { packageName: { $in: ['package-1'] } },
-					fields: ['packageName', 'npmVersion', 'checksum', 'nodeVersions'],
-				});
+				expect(getCommunityNodeTypes).toHaveBeenCalledWith(
+					'staging',
+					{
+						filters: { packageName: { $in: ['package-1'] } },
+						fields: ['packageName', 'npmVersion', 'checksum', 'nodeVersions'],
+					},
+					config.aiNodeSdkVersion,
+				);
 			} finally {
 				// Restore original environment
 				if (originalEnv === undefined) {

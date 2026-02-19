@@ -93,7 +93,6 @@ const telemetry = useTelemetry();
 const router = useRouter();
 const rootStore = useRootStore();
 const { isEnabled: isDynamicCredentialsEnabled } = useDynamicCredentials();
-
 const activeTab = ref('connection');
 const authError = ref('');
 const credentialId = ref('');
@@ -1233,10 +1232,10 @@ const { width } = useElementSize(credNameRef);
 				</div>
 				<div :class="$style.credActions">
 					<N8nIconButton
+						variant="subtle"
 						v-if="currentCredential && credentialPermissions.delete"
 						:title="i18n.baseText('credentialEdit.credentialEdit.delete')"
 						icon="trash-2"
-						type="tertiary"
 						:disabled="isSaving"
 						:loading="isDeleting"
 						data-test-id="credential-delete-button"

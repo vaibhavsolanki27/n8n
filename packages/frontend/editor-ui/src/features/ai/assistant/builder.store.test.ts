@@ -403,6 +403,38 @@ describe('AI Builder store', () => {
 		vi.useRealTimers();
 	});
 
+	it('should preserve thinking during streaming gaps (empty chunks before tools arrive)', async () => {
+		const builderStore = useBuilderStore();
+
+		apiSpy.mockImplementationOnce((_ctx, _payload, onMessage, onDone) => {
+			// First chunk: empty (no displayable messages) — simulates streaming gap
+			onMessage({ messages: [] });
+
+			// Second chunk: tool arrives
+			onMessage({
+				messages: [
+					{
+						type: 'tool',
+						role: 'assistant',
+						toolName: 'search_nodes',
+						toolCallId: 'call-1',
+						status: 'running',
+						displayTitle: 'Searching nodes',
+						updates: [],
+					},
+				],
+			});
+
+			onDone();
+		});
+
+		await builderStore.sendChatMessage({ text: 'Build a workflow' });
+
+		// After empty chunk, thinking should still be set (preserved from prepareForStreaming)
+		// After tool chunk, thinking should show the tool name
+		await vi.waitFor(() => expect(builderStore.builderThinkingMessage).toBe('Searching nodes'));
+	});
+
 	it('should keep processing message when workflow-updated arrives', async () => {
 		const builderStore = useBuilderStore();
 
@@ -2213,6 +2245,36 @@ describe('AI Builder store', () => {
 				await nextTick();
 
 				expect(builderStore.builderMode).toBe('plan');
+			});
+
+			it('should not switch to plan mode after restoreToVersion truncates messages', async () => {
+				enablePlanModeExperiment();
+				const builderStore = useBuilderStore();
+
+				// Simulate a conversation with nodes on canvas (active build session)
+				builderStore.chatMessages = [
+					{ role: 'user', type: 'text', text: 'Build me something' } as never,
+					{ role: 'assistant', type: 'text', text: 'Done' } as never,
+				];
+				workflowsStore.workflow.nodes = [{ name: 'Node1' }] as never;
+				await nextTick();
+				expect(builderStore.builderMode).toBe('build');
+
+				// Simulate what happens during restore: chat messages are truncated to []
+				// and nodes are cleared. The watcher would normally switch to plan mode.
+				builderStore.chatMessages = [];
+				workflowsStore.workflow.nodes = [];
+				await nextTick();
+
+				// The watcher fires and sets plan mode
+				expect(builderStore.builderMode).toBe('plan');
+
+				// Simulate the nextTick override that onRestoreConfirm performs
+				builderStore.builderMode = 'build';
+				await nextTick();
+
+				// Should stay in build mode — the override sticks
+				expect(builderStore.builderMode).toBe('build');
 			});
 		});
 
